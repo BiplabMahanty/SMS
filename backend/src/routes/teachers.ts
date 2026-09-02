@@ -50,9 +50,9 @@ router.post('/:id/assign-class', authorize('ADMIN'), async (req: Request, res: R
     if (alreadyAssigned) throw new AppError('This class is already assigned to the teacher', 409);
 
     teacher.assignedClasses.push({
-      class: new mongoose.Types.ObjectId(classId),
-      section: sectionId ? new mongoose.Types.ObjectId(sectionId) : undefined,
-      academicYear: new mongoose.Types.ObjectId(academicYear),
+      class: new mongoose.Types.ObjectId(classId as string),
+      section: sectionId ? new mongoose.Types.ObjectId(sectionId as string) : undefined,
+      academicYear: new mongoose.Types.ObjectId(academicYear as string),
     });
     await teacher.save();
 
@@ -78,9 +78,9 @@ router.delete('/:id/assign-class', authorize('ADMIN'), async (req: Request, res:
     const before = teacher.assignedClasses.length;
     teacher.assignedClasses = teacher.assignedClasses.filter(
       (ac) => !(
-        ac.class.toString() === classId &&
-        ac.academicYear.toString() === academicYear &&
-        (sectionId ? ac.section?.toString() === sectionId : !ac.section)
+        ac.class.toString() === (classId as string) &&
+        ac.academicYear.toString() === (academicYear as string) &&
+        (sectionId ? ac.section?.toString() === (sectionId as string) : !ac.section)
       )
     );
     if (teacher.assignedClasses.length === before) throw new AppError('Assignment not found', 404);

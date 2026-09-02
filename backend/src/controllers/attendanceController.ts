@@ -51,13 +51,13 @@ export const markAttendance = async (req: Request, res: Response, next: NextFunc
     const ops = (records as { student: string; status: string; checkIn?: string; checkOut?: string; remarks?: string }[]).map((r) => ({
       updateOne: {
         filter: {
-          student: r.student,
+          student: new mongoose.Types.ObjectId(r.student),
           date: dateObj,
           ...(subject ? { subject } : { subject: { $exists: false } }),
         },
         update: {
           $set: {
-            student: r.student,
+            student: new mongoose.Types.ObjectId(r.student),
             date: dateObj,
             academicYear,
             class: classId,
@@ -72,7 +72,7 @@ export const markAttendance = async (req: Request, res: Response, next: NextFunc
         },
         upsert: true,
       },
-    }));
+    })) as Parameters<typeof Attendance.bulkWrite>[0];
 
     await Attendance.bulkWrite(ops);
     sendSuccess(res, 'Attendance marked successfully', null, 200);
@@ -115,10 +115,10 @@ export const getAttendanceHistory = async (req: Request, res: Response, next: Ne
     const limit = Math.min(100, parseInt(req.query.limit as string) || 30);
 
     const filter: Record<string, unknown> = {};
-    if (classId) filter.class = classId;
-    if (section) filter.section = section;
-    if (academicYear) filter.academicYear = academicYear;
-    if (subject) filter.subject = subject;
+    if (classId) filter.class = classId as string;
+    if (section) filter.section = section as string;
+    if (academicYear) filter.academicYear = academicYear as string;
+    if (subject) filter.subject = subject as string;
 
     const dateRange = buildDateRange(month as string, year as string, date as string);
     if (dateRange) filter.date = dateRange;
@@ -205,7 +205,7 @@ export const getMyAttendanceSummary = async (req: Request, res: Response, next: 
     allRecords
       .filter((r) => r.subject)
       .forEach((r) => {
-        const sub = r.subject as { _id: string; name: string; code: string };
+        const sub = r.subject as unknown as { _id: string; name: string; code: string };
         const key = sub._id.toString();
         if (!bySubject[key]) bySubject[key] = { name: sub.name, code: sub.code, records: [] };
         bySubject[key].records.push(r);
@@ -286,8 +286,8 @@ export const getClassAttendanceReport = async (req: Request, res: Response, next
     const { class: classId, section, academicYear, month, year } = req.query;
     if (!classId || !academicYear) throw new AppError('class and academicYear are required', 400);
 
-    const filter: Record<string, unknown> = { class: classId, academicYear, subject: { $exists: false } };
-    if (section) filter.section = section;
+    const filter: Record<string, unknown> = { class: classId as string, academicYear: academicYear as string, subject: { $exists: false } };
+    if (section) filter.section = section as string;
 
     const dateRange = buildDateRange(month as string, year as string);
     if (dateRange) filter.date = dateRange;
@@ -300,7 +300,7 @@ export const getClassAttendanceReport = async (req: Request, res: Response, next
     // Group by student
     const byStudent: Record<string, { student: unknown; records: typeof records }> = {};
     records.forEach((r) => {
-      const key = (r.student as { _id: string })._id.toString();
+      const key = (r.student as unknown as { _id: string })._id.toString();
       if (!byStudent[key]) byStudent[key] = { student: r.student, records: [] };
       byStudent[key].records.push(r);
     });

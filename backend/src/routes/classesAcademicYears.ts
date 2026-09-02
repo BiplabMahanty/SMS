@@ -74,7 +74,7 @@ router.post('/classes', authorize('ADMIN'), async (req: Request, res: Response, 
   try {
     const { name, academicYear } = req.body;
     if (!name || !academicYear) throw new AppError('Name and academicYear are required', 400);
-    const cls = await Class.create({ name: name.trim(), academicYear });
+    const cls = await Class.create({ name: name.trim(), academicYear: academicYear as string });
     const populated = await cls.populate('academicYear', 'name');
     sendSuccess(res, 'Class created', populated, 201);
   } catch (err) { next(err); }

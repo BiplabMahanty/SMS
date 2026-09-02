@@ -84,10 +84,10 @@ export const getAssignments = async (req: Request, res: Response, next: NextFunc
       if (!teacher) throw new AppError('Teacher profile not found', 404);
       filter.teacher = teacher._id;
     }
-    if (req.query.class) filter.class = req.query.class;
-    if (req.query.section) filter.section = req.query.section;
-    if (req.query.academicYear) filter.academicYear = req.query.academicYear;
-    if (req.query.subject) filter.subject = req.query.subject;
+    if (req.query.class) filter.class = req.query.class as string;
+    if (req.query.section) filter.section = req.query.section as string;
+    if (req.query.academicYear) filter.academicYear = req.query.academicYear as string;
+    if (req.query.subject) filter.subject = req.query.subject as string;
 
     const total = await Assignment.countDocuments(filter);
     const assignments = await Assignment.find(filter)
@@ -152,7 +152,7 @@ export const getMyAssignments = async (req: Request, res: Response, next: NextFu
     const studentDoc = await Student.findOne({ user: req.user!.userId }).select('_id');
     const submissions = await AssignmentSubmission.find({
       assignment: { $in: assignments.map((a) => a._id) },
-      student: studentDoc!._id,
+      student: studentDoc!._id as unknown as string,
     }).lean();
 
     const subMap = new Map(submissions.map((s) => [s.assignment.toString(), s]));

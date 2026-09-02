@@ -68,8 +68,8 @@ export const getMaterials = async (req: Request, res: Response, next: NextFuncti
       if (req.query.academicYear) filter.academicYear = req.query.academicYear;
     }
 
-    if (req.query.section) filter.section = req.query.section;
-    if (req.query.subject) filter.subject = req.query.subject;
+    if (req.query.section) filter.section = req.query.section as string;
+    if (req.query.subject) filter.subject = req.query.subject as string;
     if (req.query.type) filter.type = req.query.type;
 
     const total = await StudyMaterial.countDocuments(filter);
