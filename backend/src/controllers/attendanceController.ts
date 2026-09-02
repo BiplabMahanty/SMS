@@ -92,12 +92,12 @@ export const getClassAttendance = async (req: Request, res: Response, next: Next
     next1.setDate(next1.getDate() + 1);
 
     const filter: Record<string, unknown> = {
-      class: classId,
-      academicYear,
+      class: classId as string,
+      academicYear: academicYear as string,
       date: { $gte: dateObj, $lt: next1 },
     };
-    if (section) filter.section = section;
-    if (subject) filter.subject = subject;
+    if (section) filter.section = section as string;
+    if (subject) filter.subject = subject as string;
     else filter.subject = { $exists: false };
 
     const records = await Attendance.find(filter).populate(POPULATE).lean();
@@ -172,7 +172,7 @@ export const getMyAttendance = async (req: Request, res: Response, next: NextFun
       student: student._id,
       academicYear: student.academicYear,
     };
-    if (subject) filter.subject = subject;
+    if (subject) filter.subject = subject as string;
     else filter.subject = { $exists: false };
 
     const dateRange = buildDateRange(month as string, year as string);
@@ -242,7 +242,7 @@ export const getChildAttendance = async (req: Request, res: Response, next: Next
       student: student._id,
       academicYear: student.academicYear,
     };
-    if (subject) filter.subject = subject;
+    if (subject) filter.subject = subject as string;
     else filter.subject = { $exists: false };
 
     const dateRange = buildDateRange(month as string, year as string);

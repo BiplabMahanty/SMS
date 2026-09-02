@@ -64,8 +64,8 @@ export const getMaterials = async (req: Request, res: Response, next: NextFuncti
       filter.class = student.class;
       filter.academicYear = student.academicYear;
     } else {
-      if (req.query.class) filter.class = req.query.class;
-      if (req.query.academicYear) filter.academicYear = req.query.academicYear;
+      if (req.query.class) filter.class = req.query.class as string;
+      if (req.query.academicYear) filter.academicYear = req.query.academicYear as string;
     }
 
     if (req.query.section) filter.section = req.query.section as string;
