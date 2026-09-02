@@ -67,6 +67,7 @@ export const TeacherDashboardScreen: React.FC = () => {
                 { icon: 'people-outline' as const, label: 'My Students', screen: 'MyStudents' as const, color: colors.primary },
                 { icon: 'school-outline' as const, label: 'My Classes', screen: 'MyClasses' as const, color: colors.secondary },
                 { icon: 'person-outline' as const, label: 'My Profile', screen: 'TeacherProfile' as const, color: colors.success },
+                { icon: 'time-outline' as const, label: 'My Timetable', screen: 'MyTimetable' as const, color: colors.primary },
                 { icon: 'document-text-outline' as const, label: 'Assignments', screen: 'AssignmentsList' as const, color: colors.warning },
                 { icon: 'folder-open-outline' as const, label: 'Materials', screen: 'StudyMaterialsList' as const, color: colors.info },
               ].map((item) => (

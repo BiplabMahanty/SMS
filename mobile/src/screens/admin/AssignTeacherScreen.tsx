@@ -1,28 +1,34 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity,
-  SafeAreaView, StatusBar, ScrollView, Alert,
+  View, Text, StyleSheet, TouchableOpacity,
+  SafeAreaView, StatusBar, ScrollView, Alert, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
-import { Card, Loading, ErrorState, LogoutButton } from '../../components/ui';
+import { Card, Loading, LogoutButton } from '../../components/ui';
 import { colors, typography, spacing, radii } from '../../theme';
 import { useAppDispatch, useAppSelector } from '../../hooks/useAppStore';
 import { fetchTeachers } from '../../store/slices/teacherSlice';
-import { fetchClasses, fetchAcademicYears, assignClassToTeacher, unassignClassFromTeacher } from '../../store/slices/classSlice';
+import {
+  fetchClasses, fetchSections, fetchAcademicYears,
+  assignClassToTeacher, unassignClassFromTeacher, clearSections,
+} from '../../store/slices/classSlice';
 import { Teacher } from '../../types/teacher';
 import { ClassWithYear } from '../../services/classService';
+import { SectionItem } from '../../types/student';
 
 export const AssignTeacherScreen: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation();
 
   const { teachers, loading: teacherLoading } = useAppSelector((s) => s.teachers);
-  const { classes, academicYears, submitting } = useAppSelector((s) => s.classes);
+  const { classes, sections, academicYears, submitting } = useAppSelector((s) => s.classes);
 
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
   const [selectedYear, setSelectedYear] = useState<string>('');
+  const [expandedClass, setExpandedClass] = useState<string | null>(null);
+  const [sectionsLoading, setSectionsLoading] = useState(false);
 
   const load = useCallback(() => {
     dispatch(fetchTeachers({}));
@@ -30,9 +36,7 @@ export const AssignTeacherScreen: React.FC = () => {
     dispatch(fetchAcademicYears());
   }, [dispatch]);
 
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   useEffect(() => {
     if (academicYears.length > 0 && !selectedYear) {
@@ -40,27 +44,44 @@ export const AssignTeacherScreen: React.FC = () => {
     }
   }, [academicYears]);
 
-  const isAssigned = (teacher: Teacher, cls: ClassWithYear) =>
-    teacher.assignedClasses?.some(
+  // When a class is expanded, fetch its sections
+  useEffect(() => {
+    if (expandedClass) {
+      setSectionsLoading(true);
+      dispatch(fetchSections(expandedClass)).finally(() => setSectionsLoading(false));
+    } else {
+      dispatch(clearSections());
+    }
+  }, [expandedClass]);
+
+  const getAssignment = (teacher: Teacher, cls: ClassWithYear, sectionId?: string) =>
+    teacher.assignedClasses?.find(
       (ac: any) =>
         (ac.class?._id ?? ac.class?.toString()) === cls._id &&
-        (ac.academicYear?._id ?? ac.academicYear?.toString()) === selectedYear
-    ) ?? false;
+        (ac.academicYear?._id ?? ac.academicYear?.toString()) === selectedYear &&
+        (sectionId
+          ? (ac.section?._id ?? ac.section?.toString()) === sectionId
+          : !ac.section)
+    );
 
-  const toggleAssign = async (cls: ClassWithYear) => {
+  const isAssigned = (teacher: Teacher, cls: ClassWithYear, sectionId?: string) =>
+    !!getAssignment(teacher, cls, sectionId);
+
+  const toggleAssign = async (cls: ClassWithYear, sectionId?: string) => {
     if (!selectedTeacher || !selectedYear) return;
-    const assigned = isAssigned(selectedTeacher, cls);
-    const action = assigned
-      ? unassignClassFromTeacher({ teacherId: selectedTeacher._id, classId: cls._id, academicYear: selectedYear })
-      : assignClassToTeacher({ teacherId: selectedTeacher._id, classId: cls._id, academicYear: selectedYear });
-
+    const assigned = isAssigned(selectedTeacher, cls, sectionId);
+    const payload = { teacherId: selectedTeacher._id, classId: cls._id, academicYear: selectedYear, sectionId };
+    const action = assigned ? unassignClassFromTeacher(payload) : assignClassToTeacher(payload);
     const result = await dispatch(action);
     if ((assigned ? unassignClassFromTeacher : assignClassToTeacher).fulfilled.match(result as any)) {
-      // Refresh teacher list to get updated assignedClasses
       dispatch(fetchTeachers({}));
     } else {
       Alert.alert('Error', (result as any).payload ?? 'Something went wrong');
     }
+  };
+
+  const handleClassPress = (classId: string) => {
+    setExpandedClass((prev) => (prev === classId ? null : classId));
   };
 
   if (teacherLoading && teachers.length === 0) return <Loading fullScreen />;
@@ -105,57 +126,75 @@ export const AssignTeacherScreen: React.FC = () => {
               <TouchableOpacity
                 key={t._id}
                 style={[styles.teacherChip, selectedTeacher?._id === t._id && styles.chipActive]}
-                onPress={() => setSelectedTeacher(t)}
+                onPress={() => { setSelectedTeacher(t); setExpandedClass(null); }}
               >
-                <Ionicons
-                  name="person"
-                  size={14}
-                  color={selectedTeacher?._id === t._id ? colors.white : colors.textSecondary}
-                />
-                <Text style={[styles.chipText, selectedTeacher?._id === t._id && styles.chipTextActive]}>
-                  {t.name}
-                </Text>
+                <Ionicons name="person" size={14} color={selectedTeacher?._id === t._id ? colors.white : colors.textSecondary} />
+                <Text style={[styles.chipText, selectedTeacher?._id === t._id && styles.chipTextActive]}>{t.name}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
 
-        {/* Classes Assignment */}
+        {/* Classes + Sections Assignment */}
         {selectedTeacher && (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>
-              Classes for {selectedTeacher.name}
-            </Text>
+            <Text style={styles.sectionLabel}>Classes for {selectedTeacher.name}</Text>
             {filteredClasses.length === 0 ? (
               <Text style={styles.emptyText}>No classes for this academic year.</Text>
             ) : (
               filteredClasses.map((cls) => {
-                const assigned = isAssigned(selectedTeacher, cls);
+                const isExpanded = expandedClass === cls._id;
+                const wholeClassAssigned = isAssigned(selectedTeacher, cls);
+
                 return (
                   <Card key={cls._id} style={styles.classCard}>
-                    <View style={styles.classRow}>
-                      <View style={[styles.iconBox, { backgroundColor: assigned ? colors.successLight : colors.gray100 }]}>
-                        <Ionicons name="school" size={18} color={assigned ? colors.success : colors.textSecondary} />
+                    {/* Class Row */}
+                    <TouchableOpacity style={styles.classRow} onPress={() => handleClassPress(cls._id)} activeOpacity={0.7}>
+                      <View style={[styles.iconBox, { backgroundColor: wholeClassAssigned ? colors.successLight : colors.gray100 }]}>
+                        <Ionicons name="school" size={18} color={wholeClassAssigned ? colors.success : colors.textSecondary} />
                       </View>
                       <View style={styles.classInfo}>
                         <Text style={styles.className}>{cls.name}</Text>
                         <Text style={styles.yearText}>{(cls.academicYear as any)?.name ?? '—'}</Text>
                       </View>
-                      <TouchableOpacity
-                        style={[styles.assignBtn, assigned ? styles.assignBtnActive : styles.assignBtnInactive]}
-                        onPress={() => toggleAssign(cls)}
-                        disabled={submitting}
-                      >
-                        <Ionicons
-                          name={assigned ? 'checkmark-circle' : 'add-circle-outline'}
-                          size={16}
-                          color={assigned ? colors.white : colors.primary}
+                      <Ionicons
+                        name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                        size={18}
+                        color={colors.textSecondary}
+                        style={styles.chevron}
+                      />
+                    </TouchableOpacity>
+
+                    {/* Expanded: Whole Class + Sections */}
+                    {isExpanded && (
+                      <View style={styles.sectionList}>
+                        {/* Assign whole class (no section) */}
+                        <AssignRow
+                          label="Entire Class"
+                          sublabel="All sections"
+                          assigned={wholeClassAssigned}
+                          submitting={submitting}
+                          onPress={() => toggleAssign(cls)}
                         />
-                        <Text style={[styles.assignBtnText, assigned && styles.assignBtnTextActive]}>
-                          {assigned ? 'Assigned' : 'Assign'}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
+
+                        {/* Per-section rows */}
+                        {sectionsLoading ? (
+                          <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: spacing[2] }} />
+                        ) : sections.length === 0 ? (
+                          <Text style={styles.noSectionsText}>No sections in this class</Text>
+                        ) : (
+                          sections.map((sec: SectionItem) => (
+                            <AssignRow
+                              key={sec._id}
+                              label={`Section ${sec.name}`}
+                              assigned={isAssigned(selectedTeacher, cls, sec._id)}
+                              submitting={submitting}
+                              onPress={() => toggleAssign(cls, sec._id)}
+                            />
+                          ))
+                        )}
+                      </View>
+                    )}
                   </Card>
                 );
               })
@@ -173,6 +212,33 @@ export const AssignTeacherScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
+
+interface AssignRowProps {
+  label: string;
+  sublabel?: string;
+  assigned: boolean;
+  submitting: boolean;
+  onPress: () => void;
+}
+
+const AssignRow: React.FC<AssignRowProps> = ({ label, sublabel, assigned, submitting, onPress }) => (
+  <View style={styles.assignRow}>
+    <View style={styles.assignRowInfo}>
+      <Text style={styles.assignRowLabel}>{label}</Text>
+      {sublabel && <Text style={styles.assignRowSublabel}>{sublabel}</Text>}
+    </View>
+    <TouchableOpacity
+      style={[styles.assignBtn, assigned ? styles.assignBtnActive : styles.assignBtnInactive]}
+      onPress={onPress}
+      disabled={submitting}
+    >
+      <Ionicons name={assigned ? 'checkmark-circle' : 'add-circle-outline'} size={16} color={assigned ? colors.white : colors.primary} />
+      <Text style={[styles.assignBtnText, assigned && styles.assignBtnTextActive]}>
+        {assigned ? 'Assigned' : 'Assign'}
+      </Text>
+    </TouchableOpacity>
+  </View>
+);
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
@@ -216,6 +282,13 @@ const styles = StyleSheet.create({
   classInfo: { flex: 1 },
   className: { fontSize: typography.fontSizes.base, fontWeight: typography.fontWeights.semibold, color: colors.textPrimary },
   yearText: { fontSize: typography.fontSizes.xs, color: colors.textSecondary },
+  chevron: { marginLeft: spacing[2] },
+  sectionList: { marginTop: spacing[3], borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing[2], gap: spacing[2] },
+  assignRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing[1] },
+  assignRowInfo: { flex: 1 },
+  assignRowLabel: { fontSize: typography.fontSizes.sm, fontWeight: typography.fontWeights.medium, color: colors.textPrimary },
+  assignRowSublabel: { fontSize: typography.fontSizes.xs, color: colors.textSecondary },
+  noSectionsText: { fontSize: typography.fontSizes.xs, color: colors.textSecondary, fontStyle: 'italic', paddingVertical: spacing[1] },
   assignBtn: {
     flexDirection: 'row',
     alignItems: 'center',

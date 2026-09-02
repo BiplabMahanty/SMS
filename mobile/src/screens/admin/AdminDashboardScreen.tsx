@@ -200,6 +200,12 @@ export const AdminDashboardScreen: React.FC = () => {
                 onPress={() => navigation.navigate('AttendanceClassPicker')}
                 color={colors.warning}
               />
+              <QuickLink
+                icon="time-outline"
+                label="Timetable"
+                onPress={() => navigation.navigate('Timetable')}
+                color={colors.primary}
+              />
             </View>
           </Card>
         </View>

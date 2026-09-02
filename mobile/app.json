@@ -15,13 +15,14 @@
         "backgroundColor": "#2563EB",
         "foregroundImage": "./assets/android-icon-foreground.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.studentmanagement"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "apiUrl": "http://10.0.2.2:5000/api"
+      "apiUrl": "https://sms-48kg.onrender.com/api"
     },
     "plugins": [
       "expo-font",
