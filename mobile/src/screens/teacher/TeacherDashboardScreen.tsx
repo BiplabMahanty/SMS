@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView, ScrollView,
-  StatusBar, TouchableOpacity, FlatList, Image, Modal,
+  StatusBar, TouchableOpacity, Image, Modal,
   Alert, Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,9 +15,16 @@ import { fetchMyProfile, fetchMyClasses, fetchMyStudents } from '../../store/sli
 import { logoutUser } from '../../store/slices/authSlice';
 import { TeacherStackParamList } from '../../navigation/types';
 import { getIconBg, DEFAULT_ICON } from '../../constants/classIcons';
+import { timetableService } from '../../services/timetableService';
+import { TimetableEntry, DayOfWeek } from '../../types/timetable';
 
 type NavProp = NativeStackNavigationProp<TeacherStackParamList>;
 type TabName = 'Dashboard' | 'Schedule' | 'Classes' | 'Assignments' | 'Profile';
+
+const DAY_MAP: Record<number, DayOfWeek> = {
+  0: 'SUNDAY', 1: 'MONDAY', 2: 'TUESDAY', 3: 'WEDNESDAY',
+  4: 'THURSDAY', 5: 'FRIDAY', 6: 'SATURDAY',
+};
 
 export const TeacherDashboardScreen: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -29,13 +36,25 @@ export const TeacherDashboardScreen: React.FC = () => {
   const [quickActionsOpen, setQuickActionsOpen] = useState(true);
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 });
+  const [todayEntries, setTodayEntries] = useState<TimetableEntry[]>([]);
   const avatarRef = useRef<View>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  const today = new Date().toISOString().split('T')[0];
+  const todayDay = DAY_MAP[new Date().getDay()];
 
   useEffect(() => {
     dispatch(fetchMyProfile());
     dispatch(fetchMyClasses());
     dispatch(fetchMyStudents(undefined));
+    timetableService.getMyTimetableTeacher({ dayOfWeek: todayDay })
+      .then(({ data }) => {
+        const sorted = [...(data.data ?? [])].sort((a, b) =>
+          a.startTime.localeCompare(b.startTime)
+        );
+        setTodayEntries(sorted);
+      })
+      .catch(() => {});
   }, [dispatch]);
 
   if (detailLoading && !myProfile) return <Loading fullScreen />;
@@ -59,14 +78,10 @@ export const TeacherDashboardScreen: React.FC = () => {
 
   const handleLogout = () => {
     closeDropdown(() => {
-      Alert.alert(
-        'Logout',
-        'Are you sure you want to logout?',
-        [
-          { text: 'No', style: 'cancel' },
-          { text: 'Yes', style: 'destructive', onPress: () => dispatch(logoutUser()) },
-        ]
-      );
+      Alert.alert('Logout', 'Are you sure you want to logout?', [
+        { text: 'No', style: 'cancel' },
+        { text: 'Yes', style: 'destructive', onPress: () => dispatch(logoutUser()) },
+      ]);
     });
   };
 
@@ -88,158 +103,227 @@ export const TeacherDashboardScreen: React.FC = () => {
 
   const avatarUri = user?.profileImage ?? myProfile?.profileImage;
 
-  return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor={styles.safe.backgroundColor} />
-
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.welcomeText}>Welcome Back</Text>
-            <Text style={styles.nameText}>{user?.name ?? 'Teacher'}</Text>
-          </View>
-
-          <TouchableOpacity ref={avatarRef} onPress={openDropdown} activeOpacity={0.85}>
-            {avatarUri ? (
-              <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
-            ) : (
-              <View style={styles.avatarFallback}>
-                <Text style={styles.avatarInitial}>
-                  {(user?.name ?? 'T')[0].toUpperCase()}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
+  const ListHeader = (
+    <>
+      {/* Header */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.welcomeText}>Welcome Back</Text>
+          <Text style={styles.nameText}>{user?.name ?? 'Teacher'}</Text>
         </View>
+        <TouchableOpacity ref={avatarRef} onPress={openDropdown} activeOpacity={0.85}>
+          {avatarUri ? (
+            <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+          ) : (
+            <View style={styles.avatarFallback}>
+              <Text style={styles.avatarInitial}>
+                {(user?.name ?? 'T')[0].toUpperCase()}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
 
-        {/* Dropdown Modal */}
-        <Modal transparent visible={dropdownVisible} onRequestClose={() => closeDropdown()}>
-          <TouchableOpacity style={styles.dropdownOverlay} activeOpacity={1} onPress={() => closeDropdown()}>
-            <Animated.View
-              style={[styles.dropdownMenu, { top: dropdownPos.top, right: dropdownPos.right, opacity: fadeAnim }]}
-            >
-              <TouchableOpacity
-                style={styles.dropdownItem}
-                onPress={() => closeDropdown(() => navigation.navigate('TeacherProfile'))}
-              >
-                <Ionicons name="person-outline" size={16} color={colors.textPrimary} />
-                <Text style={styles.dropdownItemText}>Profile</Text>
-              </TouchableOpacity>
-              <View style={styles.dropdownDivider} />
-              <TouchableOpacity style={styles.dropdownItem} onPress={handleLogout}>
-                <Ionicons name="log-out-outline" size={16} color={colors.error} />
-                <Text style={[styles.dropdownItemText, { color: colors.error }]}>Logout</Text>
-              </TouchableOpacity>
-            </Animated.View>
-          </TouchableOpacity>
-        </Modal>
-
-        {/* Today's Overview */}
-        <Text style={styles.sectionTitle}>Today's Overview</Text>
-        <View style={styles.statsRow}>
-          <View style={[styles.statCard, { borderLeftColor: colors.primary }]}>
-            <Text style={styles.statLabel}>Total Classes:</Text>
-            <Text style={styles.statValue}>{myClasses.length}</Text>
-          </View>
-          <View style={[styles.statCard, { borderLeftColor: colors.success }]}>
-            <Text style={styles.statLabel}>Total Students:</Text>
-            <Text style={styles.statValue}>{totalStudents}</Text>
-          </View>
+      {/* Today's Overview */}
+      <Text style={styles.sectionTitle}>Today's Overview</Text>
+      <View style={styles.statsRow}>
+        <View style={[styles.statCard, { borderLeftColor: colors.primary }]}>
+          <Text style={styles.statLabel}>Total Classes:</Text>
+          <Text style={styles.statValue}>{myClasses.length}</Text>
         </View>
+        <View style={[styles.statCard, { borderLeftColor: colors.success }]}>
+          <Text style={styles.statLabel}>Total Students:</Text>
+          <Text style={styles.statValue}>{totalStudents}</Text>
+        </View>
+      </View>
 
-        {/* My Classes */}
-        <Text style={styles.sectionTitle}>My Classes</Text>
-        <FlatList
-          data={myClasses}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          keyExtractor={(_, i) => String(i)}
-          contentContainerStyle={styles.classesList}
-          renderItem={({ item: ac }) => {
-            if (!ac.class || !ac.academicYear) return null;
-            const icon = ac.class.icon ?? DEFAULT_ICON;
-            const iconBg = getIconBg(icon);
-            const today = new Date().toISOString().split('T')[0];
+      {/* My Classes */}
+      <Text style={styles.sectionTitle}>My Classes</Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        nestedScrollEnabled
+        contentContainerStyle={styles.classesList}
+      >
+        {myClasses.length === 0
+          ? <Text style={styles.emptyText}>No classes assigned yet.</Text>
+          : myClasses.map((ac, i) => {
+              if (!ac.class || !ac.academicYear) return null;
+              const icon = ac.class.icon ?? DEFAULT_ICON;
+              const iconBg = getIconBg(icon);
+              return (
+                <TouchableOpacity
+                  key={String(i)}
+                  style={styles.classCard}
+                  activeOpacity={0.85}
+                  onPress={() => navigation.navigate('MarkAttendance', {
+                    classId: ac.class._id,
+                    sectionId: ac.section?._id,
+                    academicYearId: ac.academicYear._id,
+                    className: `${ac.class.name}${ac.section ? ` - ${ac.section.name}` : ''}`,
+                    date: today,
+                  })}
+                >
+                  <View style={[styles.classIconBox, { backgroundColor: iconBg }]}>
+                    <Text style={styles.classEmoji}>{icon}</Text>
+                  </View>
+                  <Text style={styles.classNameText} numberOfLines={2}>
+                    {ac.class.name}{ac.section ? `\n${ac.section.name}` : ''}
+                  </Text>
+                  <Text style={styles.classYear}>{ac.academicYear.name}</Text>
+                  <View style={styles.classFooter}>
+                    <Ionicons name="person-outline" size={12} color={colors.textSecondary} />
+                    <Text style={styles.classFooterText}>1</Text>
+                    <Ionicons name="people-outline" size={12} color={colors.textSecondary} style={{ marginLeft: 8 }} />
+                    <Text style={styles.classFooterText}>{totalStudents}</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })
+        }
+      </ScrollView>
+
+      {/* Today's Timeline */}
+      <Text style={[styles.sectionTitle, { marginTop: spacing[4] }]}>Today's Timeline</Text>
+      <View style={styles.timelineCard}>
+        {todayEntries.length === 0 ? (
+          <Text style={[styles.emptyText, { paddingVertical: spacing[2] }]}>No classes scheduled for today.</Text>
+        ) : (
+          todayEntries.map((entry, i) => {
+            const isLast = i === todayEntries.length - 1;
+            const className = `${entry.class?.name ?? ''}${entry.section ? ` - ${entry.section.name}` : ''}`;
             return (
               <TouchableOpacity
-                style={styles.classCard}
-                activeOpacity={0.85}
+                key={entry._id}
+                style={[styles.timelineRow, !isLast && styles.timelineRowBorder]}
+                activeOpacity={0.75}
                 onPress={() => navigation.navigate('MarkAttendance', {
+                  classId: entry.class._id,
+                  sectionId: entry.section?._id,
+                  academicYearId: entry.academicYear._id,
+                  className,
+                  date: today,
+                })}
+              >
+                <View style={styles.timelineDot} />
+                <View style={styles.timelineContent}>
+                  <View style={styles.timelineTop}>
+                    <Text style={styles.timelineSubject} numberOfLines={1}>
+                      {entry.subject?.name ?? 'Subject'}
+                    </Text>
+                    <View style={styles.timelineBadge}>
+                      <Ionicons name="checkmark-circle-outline" size={11} color={colors.primary} />
+                      <Text style={styles.timelineBadgeText}>Attendance</Text>
+                    </View>
+                  </View>
+                  <View style={styles.timelineBottom}>
+                    <Ionicons name="time-outline" size={11} color={colors.textSecondary} />
+                    <Text style={styles.timelineMeta}>{entry.startTime} – {entry.endTime}</Text>
+                    <Text style={styles.timelineMetaDot}>·</Text>
+                    <Ionicons name="book-outline" size={11} color={colors.textSecondary} />
+                    <Text style={styles.timelineMeta} numberOfLines={1}>{className}</Text>
+                    {entry.room ? (
+                      <>
+                        <Text style={styles.timelineMetaDot}>·</Text>
+                        <Ionicons name="location-outline" size={11} color={colors.textSecondary} />
+                        <Text style={styles.timelineMeta}>{entry.room}</Text>
+                      </>
+                    ) : null}
+                  </View>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+              </TouchableOpacity>
+            );
+          })
+        )}
+      </View>
+    </>
+  );
+
+  const ListFooter = (
+    <View style={styles.quickActionsCard}>
+      <View style={styles.quickActionsHeader}>
+        <View style={styles.plusBtn}>
+          <Ionicons name="add" size={22} color={'#f3f5f6'} />
+        </View>
+        <Text style={styles.quickActionsTitle}>Quick Actions</Text>
+        <TouchableOpacity onPress={() => setQuickActionsOpen((v) => !v)}>
+          <Ionicons
+            name={quickActionsOpen ? 'chevron-up' : 'chevron-down'}
+            size={18}
+            color={colors.textSecondary}
+          />
+        </TouchableOpacity>
+      </View>
+      {quickActionsOpen && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          nestedScrollEnabled
+          contentContainerStyle={styles.quickActionsBtns}
+        >
+          <TouchableOpacity
+            style={styles.qaBtn}
+            onPress={() => {
+              const ac = myClasses.find(c => c.class && c.academicYear);
+              if (ac) {
+                navigation.navigate('MarkAttendance', {
                   classId: ac.class._id,
                   sectionId: ac.section?._id,
                   academicYearId: ac.academicYear._id,
                   className: `${ac.class.name}${ac.section ? ` - ${ac.section.name}` : ''}`,
                   date: today,
-                })}
-              >
-                <View style={[styles.classIconBox, { backgroundColor: iconBg }]}>
-                  <Text style={styles.classEmoji}>{icon}</Text>
-                </View>
-                <Text style={styles.classNameText} numberOfLines={2}>
-                  {ac.class.name}{ac.section ? `\n${ac.section.name}` : ''}
-                </Text>
-                <Text style={styles.classYear}>{ac.academicYear.name}</Text>
-                <View style={styles.classFooter}>
-                  <Ionicons name="person-outline" size={12} color={colors.textSecondary} />
-                  <Text style={styles.classFooterText}>1</Text>
-                  <Ionicons name="people-outline" size={12} color={colors.textSecondary} style={{ marginLeft: 8 }} />
-                  <Text style={styles.classFooterText}>{totalStudents}</Text>
-                </View>
-              </TouchableOpacity>
-            );
-          }}
-          ListEmptyComponent={<Text style={styles.emptyText}>No classes assigned yet.</Text>}
-        />
+                });
+              }
+            }}
+          >
+            <Text style={styles.qaBtnText}>Mark Attendance</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.qaBtn} onPress={() => navigation.navigate('CreateAssignment')}>
+            <Text style={styles.qaBtnText}>Add Assignment</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.qaBtn} onPress={() => navigation.navigate('StudyMaterialsList')}>
+            <Text style={styles.qaBtnText}>Add Material</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      )}
+    </View>
+  );
 
-        {/* Quick Actions */}
-        <View style={styles.quickActionsCard}>
-          <View style={styles.quickActionsHeader}>
-            <View style={styles.plusBtn}>
-              <Ionicons name="add" size={22} color={'#f3f5f6'} />
-            </View>
-            <Text style={styles.quickActionsTitle}>Quick Actions</Text>
-            <TouchableOpacity onPress={() => setQuickActionsOpen((v) => !v)}>
-              <Ionicons
-                name={quickActionsOpen ? 'chevron-up' : 'chevron-down'}
-                size={18}
-                color={colors.textSecondary}
-              />
+  return (
+    <SafeAreaView style={styles.safe}>
+      <StatusBar barStyle="dark-content" backgroundColor={styles.safe.backgroundColor} />
+
+      <Modal transparent visible={dropdownVisible} onRequestClose={() => closeDropdown()}>
+        <TouchableOpacity style={styles.dropdownOverlay} activeOpacity={1} onPress={() => closeDropdown()}>
+          <Animated.View
+            style={[styles.dropdownMenu, { top: dropdownPos.top, right: dropdownPos.right, opacity: fadeAnim }]}
+          >
+            <TouchableOpacity
+              style={styles.dropdownItem}
+              onPress={() => closeDropdown(() => navigation.navigate('TeacherProfile'))}
+            >
+              <Ionicons name="person-outline" size={16} color={colors.textPrimary} />
+              <Text style={styles.dropdownItemText}>Profile</Text>
             </TouchableOpacity>
-          </View>
-          {quickActionsOpen && (
-            <View style={styles.quickActionsBtns}>
-              <TouchableOpacity
-                style={styles.qaBtn}
-                onPress={() => {
-                  const ac = myClasses.find(c => c.class && c.academicYear);
-                  if (ac) {
-                    const today = new Date().toISOString().split('T')[0];
-                    navigation.navigate('MarkAttendance', {
-                      classId: ac.class._id,
-                      sectionId: ac.section?._id,
-                      academicYearId: ac.academicYear._id,
-                      className: `${ac.class.name}${ac.section ? ` - ${ac.section.name}` : ''}`,
-                      date: today,
-                    });
-                  }
-                }}
-              >
-                <Text style={styles.qaBtnText}>Mark Attendance</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.qaBtn} onPress={() => navigation.navigate('CreateAssignment')}>
-                <Text style={styles.qaBtnText}>Add Assignment</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.qaBtn} onPress={() => navigation.navigate('StudyMaterialsList')}>
-                <Text style={styles.qaBtnText}>Add Material</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
+            <View style={styles.dropdownDivider} />
+            <TouchableOpacity style={styles.dropdownItem} onPress={handleLogout}>
+              <Ionicons name="log-out-outline" size={16} color={colors.error} />
+              <Text style={[styles.dropdownItemText, { color: colors.error }]}>Logout</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </TouchableOpacity>
+      </Modal>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scroll}
+        nestedScrollEnabled
+      >
+        {ListHeader}
+        {ListFooter}
       </ScrollView>
 
-      {/* Bottom Tab Bar */}
       <View style={styles.tabBar}>
         {tabs.map((tab) => {
           const isActive = activeTab === tab.name;
@@ -267,9 +351,8 @@ export const TeacherDashboardScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#d4dae2' },
-  scroll: { paddingBottom: 90 },
+  scroll: { paddingBottom: 90, paddingHorizontal: spacing[2] },
 
-  // Header
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -281,7 +364,6 @@ const styles = StyleSheet.create({
   welcomeText: { fontSize: typography.fontSizes.base, color: colors.textSecondary },
   nameText: { fontSize: typography.fontSizes['2xl'], fontWeight: typography.fontWeights.bold, color: colors.textPrimary },
 
-  // Avatar
   avatarImage: {
     width: 48, height: 48, borderRadius: 24,
     borderWidth: 2, borderColor: '#6b6763',
@@ -295,7 +377,6 @@ const styles = StyleSheet.create({
   },
   avatarInitial: { fontSize: 20, fontWeight: typography.fontWeights.bold, color: '#f3f5f6' },
 
-  // Dropdown
   dropdownOverlay: { flex: 1 },
   dropdownMenu: {
     position: 'absolute',
@@ -312,18 +393,15 @@ const styles = StyleSheet.create({
   dropdownItemText: { fontSize: typography.fontSizes.sm, fontWeight: typography.fontWeights.medium, color: colors.textPrimary },
   dropdownDivider: { height: 1, backgroundColor: colors.border },
 
-  // Section title
   sectionTitle: {
     fontSize: typography.fontSizes.md,
     fontWeight: typography.fontWeights.semibold,
     color: colors.textPrimary,
-    marginHorizontal: spacing[2],
     marginBottom: spacing[3],
     marginTop: spacing[2],
   },
 
-  // Stats
-  statsRow: { flexDirection: 'row', gap: spacing[3], marginHorizontal: spacing[2], marginBottom: spacing[4] },
+  statsRow: { flexDirection: 'row', gap: spacing[3], marginBottom: spacing[4] },
   statCard: {
     flex: 1,
     backgroundColor: '#f3f5f6',
@@ -335,19 +413,18 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: typography.fontSizes.sm, color: colors.textSecondary, marginBottom: 4 },
   statValue: { fontSize: typography.fontSizes['3xl'], fontWeight: typography.fontWeights.bold, color: colors.textPrimary },
 
-  // Classes
-  classesList: { paddingHorizontal: spacing[5], gap: spacing[3], paddingBottom: spacing[2] },
+  classesList: { paddingHorizontal: spacing[4], gap: spacing[3], paddingBottom: spacing[2] },
   classCard: {
     width: 150,
     backgroundColor: '#f3f5f6',
     borderRadius: radii.lg,
-    padding: spacing[4],
+    padding: spacing[2],
     ...shadows.sm,
   },
   classIconBox: {
     width: 52, height: 52, borderRadius: radii.md,
     alignItems: 'center', justifyContent: 'center',
-    marginBottom: spacing[3],
+    marginBottom: spacing[1],
   },
   classEmoji: { fontSize: 28 },
   classNameText: {
@@ -361,11 +438,68 @@ const styles = StyleSheet.create({
   classFooterText: { fontSize: typography.fontSizes.xs, color: colors.textSecondary, marginLeft: 3 },
   emptyText: { fontSize: typography.fontSizes.sm, color: colors.textSecondary, marginLeft: spacing[2] },
 
-  // Quick Actions
+  // Timeline
+  timelineCard: {
+    backgroundColor: '#f3f5f6',
+    borderRadius: radii.lg,
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[1],
+    ...shadows.sm,
+  },
+  timelineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing[3],
+    gap: spacing[3],
+  },
+  timelineRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  timelineDot: {
+    width: 10, height: 10, borderRadius: 5,
+    backgroundColor: colors.primary,
+  },
+  timelineContent: { flex: 1 },
+  timelineTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+    gap: spacing[2],
+  },
+  timelineSubject: {
+    flex: 1,
+    fontSize: typography.fontSizes.base,
+    fontWeight: typography.fontWeights.semibold,
+    color: colors.textPrimary,
+  },
+  timelineBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: colors.primaryLight,
+    borderRadius: radii.full,
+    paddingHorizontal: spacing[2],
+    paddingVertical: 2,
+  },
+  timelineBadgeText: {
+    fontSize: typography.fontSizes.xs,
+    color: colors.primary,
+    fontWeight: typography.fontWeights.medium,
+  },
+  timelineBottom: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    flexWrap: 'wrap',
+  },
+  timelineMeta: { fontSize: typography.fontSizes.xs, color: colors.textSecondary },
+  timelineMetaDot: { fontSize: typography.fontSizes.xs, color: colors.textSecondary },
+
   quickActionsCard: {
     backgroundColor: '#f3f5f6',
     borderRadius: radii.xl,
-    marginHorizontal: spacing[2],
     marginTop: spacing[4],
     padding: spacing[4],
     ...shadows.sm,
@@ -382,7 +516,7 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeights.semibold,
     color: colors.textPrimary,
   },
-  quickActionsBtns: { flexDirection: 'row', gap: spacing[3], marginTop: spacing[3] },
+  quickActionsBtns: { flexDirection: 'row', gap: spacing[3], marginTop: spacing[3], paddingBottom: spacing[1] },
   qaBtn: {
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[2],
@@ -393,7 +527,6 @@ const styles = StyleSheet.create({
   },
   qaBtnText: { fontSize: typography.fontSizes.sm, fontWeight: typography.fontWeights.medium, color: colors.textPrimary },
 
-  // Bottom Tab Bar
   tabBar: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,

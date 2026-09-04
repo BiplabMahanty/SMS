@@ -42,8 +42,8 @@ export const MyClassesScreen: React.FC = () => {
                 <Ionicons name="school" size={22} color={colors.primary} />
               </View>
               <View style={styles.info}>
-                <Text style={styles.className}>{item.class.name}{item.section ? ` — ${item.section.name}` : ''}</Text>
-                <Text style={styles.yearText}>{item.academicYear.name}</Text>
+                <Text style={styles.className}>{item.class?.name}{item.section ? ` — ${item.section.name}` : ''}</Text>
+                <Text style={styles.yearText}>{item.academicYear?.name}</Text>
               </View>
             </View>
           </Card>

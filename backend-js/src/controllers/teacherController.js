@@ -9,7 +9,7 @@ const { sendSuccess } = require('../utils/response');
 const POPULATE_ASSIGNED = [
   { path: 'assignedClasses.class', select: 'name icon' },
   { path: 'assignedClasses.section', select: 'name' },
-  { path: 'assignedClasses.academicYear', select: 'name' },
+  { path: 'assignedClasses.academicYear', select: 'name isCurrent' },
 ];
 
 const getTeachers = async (req, res, next) => {
@@ -92,7 +92,10 @@ const getMyClasses = async (req, res, next) => {
     const teacher = await getTeacherByUserId(req.user.userId);
     if (!teacher) throw new AppError('Teacher profile not found for this account', 404);
     const populated = await teacher.populate(POPULATE_ASSIGNED);
-    sendSuccess(res, 'Assigned classes fetched successfully', populated.assignedClasses);
+    const activeClasses = populated.assignedClasses.filter(
+      (ac) => ac.class && ac.academicYear?.isCurrent === true
+    );
+    sendSuccess(res, 'Assigned classes fetched successfully', activeClasses);
   } catch (err) { next(err); }
 };
 
@@ -100,14 +103,18 @@ const getMyStudents = async (req, res, next) => {
   try {
     const teacher = await getTeacherByUserId(req.user.userId);
     if (!teacher) throw new AppError('Teacher profile not found for this account', 404);
-    if (teacher.assignedClasses.length === 0) {
+    const populated = await teacher.populate(POPULATE_ASSIGNED);
+    const activeAssigned = populated.assignedClasses.filter(
+      (ac) => ac.class && ac.academicYear?.isCurrent === true
+    );
+    if (activeAssigned.length === 0) {
       sendSuccess(res, 'No assigned classes', [], 200, { total: 0, page: 1, limit: 20, totalPages: 0 });
       return;
     }
+    const classIds = activeAssigned.map((ac) => ac.class._id ?? ac.class);
 
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
-    const classIds = teacher.assignedClasses.map((ac) => ac.class);
     const filter = { class: { $in: classIds } };
 
     if (req.query.search) {
