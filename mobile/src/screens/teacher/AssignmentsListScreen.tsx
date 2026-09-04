@@ -125,7 +125,7 @@ export const AssignmentsListScreen: React.FC = () => {
                 <Text style={styles.dueText}>
                   Due: {new Date(item.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </Text>
-                <Text style={styles.submittedText}>Submitted: <Text style={styles.submittedBold}>28/30</Text></Text>
+                <Text style={styles.submittedText}>Submitted: <Text style={styles.submittedBold}>{item.submissionCount ?? 0}/{item.totalStudents ?? 0}</Text></Text>
               </View>
             </View>
           </TouchableOpacity>

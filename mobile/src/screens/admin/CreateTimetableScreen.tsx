@@ -9,7 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigation } from '@react-navigation/native';
 
-import { Input, Button, Card, Dropdown, LogoutButton } from '../../components/ui';
+import { Input, Button, Card, Dropdown, LogoutButton, TimePicker } from '../../components/ui';
 import { colors, typography, spacing, radii } from '../../theme';
 import { useAppDispatch, useAppSelector } from '../../hooks/useAppStore';
 import { createTimetableEntry } from '../../store/slices/timetableSlice';
@@ -207,13 +207,13 @@ export const CreateTimetableScreen: React.FC = () => {
           <Text style={styles.sectionTitle}>Time & Room</Text>
           <View style={styles.timeRow}>
             <View style={styles.timeField}>
-              <Controller control={control} name="startTime" render={({ field: { onChange, onBlur, value } }) => (
-                <Input label="Start Time *" placeholder="08:00" leftIcon="time-outline" onChangeText={onChange} onBlur={onBlur} value={value} error={errors.startTime?.message} />
+              <Controller control={control} name="startTime" render={({ field: { onChange, value } }) => (
+                <TimePicker label="Start Time *" value={value} onChange={onChange} error={errors.startTime?.message} />
               )} />
             </View>
             <View style={styles.timeField}>
-              <Controller control={control} name="endTime" render={({ field: { onChange, onBlur, value } }) => (
-                <Input label="End Time *" placeholder="09:00" leftIcon="time-outline" onChangeText={onChange} onBlur={onBlur} value={value} error={errors.endTime?.message} />
+              <Controller control={control} name="endTime" render={({ field: { onChange, value } }) => (
+                <TimePicker label="End Time *" value={value} onChange={onChange} error={errors.endTime?.message} />
               )} />
             </View>
           </View>

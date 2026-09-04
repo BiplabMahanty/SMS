@@ -9,7 +9,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
-import { Card, Loading, EmptyState, ErrorState, ConfirmModal, Input, Button, LogoutButton } from '../../components/ui';
+import { Card, Loading, EmptyState, ErrorState, ConfirmModal, Input, Button, LogoutButton, DatePicker } from '../../components/ui';
 import { colors, typography, spacing, radii } from '../../theme';
 import { useAppDispatch, useAppSelector } from '../../hooks/useAppStore';
 import {
@@ -184,26 +184,20 @@ export const AcademicYearsScreen: React.FC = () => {
                 />
               )} />
 
-              <Controller control={control} name="startDate" render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                  label="Start Date * (YYYY-MM-DD)"
-                  placeholder="e.g. 2024-04-01"
-                  leftIcon="calendar-outline"
-                  onChangeText={onChange}
-                  onBlur={onBlur}
+              <Controller control={control} name="startDate" render={({ field: { onChange, value } }) => (
+                <DatePicker
+                  label="Start Date *"
                   value={value}
+                  onChange={onChange}
                   error={errors.startDate?.message}
                 />
               )} />
 
-              <Controller control={control} name="endDate" render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                  label="End Date * (YYYY-MM-DD)"
-                  placeholder="e.g. 2025-03-31"
-                  leftIcon="calendar-outline"
-                  onChangeText={onChange}
-                  onBlur={onBlur}
+              <Controller control={control} name="endDate" render={({ field: { onChange, value } }) => (
+                <DatePicker
+                  label="End Date *"
                   value={value}
+                  onChange={onChange}
                   error={errors.endDate?.message}
                 />
               )} />

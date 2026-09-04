@@ -158,6 +158,7 @@ export const TeacherDashboardScreen: React.FC = () => {
           keyExtractor={(_, i) => String(i)}
           contentContainerStyle={styles.classesList}
           renderItem={({ item: ac }) => {
+            if (!ac.class || !ac.academicYear) return null;
             const icon = ac.class.icon ?? DEFAULT_ICON;
             const iconBg = getIconBg(icon);
             const today = new Date().toISOString().split('T')[0];
@@ -212,8 +213,8 @@ export const TeacherDashboardScreen: React.FC = () => {
               <TouchableOpacity
                 style={styles.qaBtn}
                 onPress={() => {
-                  if (myClasses.length > 0) {
-                    const ac = myClasses[0];
+                  const ac = myClasses.find(c => c.class && c.academicYear);
+                  if (ac) {
                     const today = new Date().toISOString().split('T')[0];
                     navigation.navigate('MarkAttendance', {
                       classId: ac.class._id,

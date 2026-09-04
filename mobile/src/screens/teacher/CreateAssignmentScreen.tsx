@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, SafeAreaView, StatusBar, TouchableO
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import * as DocumentPicker from 'expo-document-picker';
-import { Input, Button, Dropdown, LogoutButton } from '../../components/ui';
+import { Input, Button, Dropdown, LogoutButton, DatePicker } from '../../components/ui';
 import { colors, typography, spacing } from '../../theme';
 import { useAppDispatch } from '../../hooks/useAppStore';
 import { createAssignment } from '../../store/slices/assignmentSlice';
@@ -126,7 +126,11 @@ export const CreateAssignmentScreen: React.FC = () => {
           disabled={!classId}
         />
 
-        <Input label="Due Date * (YYYY-MM-DD)" value={form.dueDate} onChangeText={v => setForm(p => ({ ...p, dueDate: v }))} />
+        <DatePicker
+          label="Due Date *"
+          value={form.dueDate}
+          onChange={v => setForm(p => ({ ...p, dueDate: v }))}
+        />
 
         <TouchableOpacity style={styles.filePicker} onPress={pickFile}>
           <Ionicons name="attach" size={20} color={colors.primary} />

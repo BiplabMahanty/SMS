@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Input, Button, Card, PhotoPicker } from './ui';
+import { Input, Button, Card, PhotoPicker, DatePicker } from './ui';
 import { colors, typography, spacing, radii } from '../theme';
 import { TeacherFormData, Teacher } from '../types/teacher';
 
@@ -116,8 +116,8 @@ export const TeacherForm: React.FC<TeacherFormProps> = ({
         <Controller control={control} name="department" render={({ field: { onChange, onBlur, value } }) => (
           <Input label="Department" placeholder="e.g. Mathematics" leftIcon="business-outline" onChangeText={onChange} onBlur={onBlur} value={value} />
         )} />
-        <Controller control={control} name="joiningDate" render={({ field: { onChange, onBlur, value } }) => (
-          <Input label="Joining Date (YYYY-MM-DD)" placeholder="2023-08-01" leftIcon="calendar-outline" onChangeText={onChange} onBlur={onBlur} value={value} />
+        <Controller control={control} name="joiningDate" render={({ field: { onChange, value } }) => (
+          <DatePicker label="Joining Date" value={value ?? ''} onChange={onChange} />
         )} />
 
         {/* Subjects */}

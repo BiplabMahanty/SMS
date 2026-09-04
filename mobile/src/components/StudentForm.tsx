@@ -4,7 +4,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
-import { Input, Button, Card, Dropdown, PhotoPicker } from './ui';
+import { Input, Button, Card, Dropdown, PhotoPicker, DatePicker } from './ui';
 import { colors, typography, spacing } from '../theme';
 import { StudentFormData, Student } from '../types/student';
 import { classService } from '../services/classService';
@@ -173,8 +173,8 @@ export const StudentForm: React.FC<StudentFormProps> = ({
             </View>
           </View>
         )} />
-        <Controller control={control} name="dateOfBirth" render={({ field: { onChange, onBlur, value } }) => (
-          <Input label="Date of Birth (YYYY-MM-DD)" placeholder="2005-01-15" leftIcon="calendar-outline" onChangeText={onChange} onBlur={onBlur} value={value} />
+        <Controller control={control} name="dateOfBirth" render={({ field: { onChange, value } }) => (
+          <DatePicker label="Date of Birth" value={value ?? ''} onChange={onChange} />
         )} />
       </Card>
 
@@ -220,8 +220,8 @@ export const StudentForm: React.FC<StudentFormProps> = ({
         <Controller control={control} name="rollNumber" render={({ field: { onChange, onBlur, value } }) => (
           <Input label="Roll Number" placeholder="e.g. 01" leftIcon="document-text-outline" onChangeText={onChange} onBlur={onBlur} value={value} />
         )} />
-        <Controller control={control} name="admissionDate" render={({ field: { onChange, onBlur, value } }) => (
-          <Input label="Admission Date (YYYY-MM-DD)" placeholder="2024-06-01" leftIcon="calendar-outline" onChangeText={onChange} onBlur={onBlur} value={value} />
+        <Controller control={control} name="admissionDate" render={({ field: { onChange, value } }) => (
+          <DatePicker label="Admission Date" value={value ?? ''} onChange={onChange} />
         )} />
       </Card>
 

@@ -18,6 +18,8 @@ export interface Assignment {
   totalMarks?: number;
   attachments: Attachment[];
   submission?: AssignmentSubmission | null;
+  submissionCount?: number;
+  totalStudents?: number;
   createdAt: string;
 }
 

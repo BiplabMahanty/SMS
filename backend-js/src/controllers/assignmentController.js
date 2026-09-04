@@ -81,7 +81,35 @@ const getAssignments = async (req, res, next) => {
     if (req.query.subject) filter.subject = req.query.subject;
     const total = await Assignment.countDocuments(filter);
     const assignments = await Assignment.find(filter).populate(POPULATE).sort({ dueDate: 1 }).skip((page - 1) * limit).limit(limit).lean();
-    sendSuccess(res, 'Assignments fetched', assignments, 200, { total, page, limit, totalPages: Math.ceil(total / limit) });
+
+    // Attach submissionCount + totalStudents to each assignment
+    const assignmentIds = assignments.map((a) => a._id);
+    const [submissionCounts, studentCounts] = await Promise.all([
+      AssignmentSubmission.aggregate([
+        { $match: { assignment: { $in: assignmentIds } } },
+        { $group: { _id: '$assignment', count: { $sum: 1 } } },
+      ]),
+      Assignment.aggregate([
+        { $match: { _id: { $in: assignmentIds } } },
+        { $lookup: { from: 'students', let: { cls: '$class', sec: '$section' }, pipeline: [
+          { $match: { $expr: { $and: [
+            { $eq: ['$class', '$$cls'] },
+            { $eq: ['$status', 'ACTIVE'] },
+            { $or: [{ $eq: ['$$sec', null] }, { $eq: ['$section', '$$sec'] }] },
+          ] } } },
+        ], as: 'students' } },
+        { $project: { count: { $size: '$students' } } },
+      ]),
+    ]);
+    const subMap = new Map(submissionCounts.map((s) => [s._id.toString(), s.count]));
+    const stuMap = new Map(studentCounts.map((s) => [s._id.toString(), s.count]));
+    const enriched = assignments.map((a) => ({
+      ...a,
+      submissionCount: subMap.get(a._id.toString()) ?? 0,
+      totalStudents: stuMap.get(a._id.toString()) ?? 0,
+    }));
+
+    sendSuccess(res, 'Assignments fetched', enriched, 200, { total, page, limit, totalPages: Math.ceil(total / limit) });
   } catch (err) { next(err); }
 };
 
