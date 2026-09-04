@@ -26,8 +26,17 @@ export const fetchMyAssignments = createAsyncThunk('assignments/fetchMine', (par
 export const fetchAssignment = createAsyncThunk('assignments/fetchOne', (id: string) =>
   assignmentService.getAssignment(id));
 
-export const createAssignment = createAsyncThunk('assignments/create', (formData: FormData) =>
-  assignmentService.createAssignment(formData));
+export const createAssignment = createAsyncThunk(
+  'assignments/create',
+  async (payload: FormData | object, { rejectWithValue }) => {
+    try {
+      return await assignmentService.createAssignment(payload);
+    } catch (e: any) {
+      const msg = e?.response?.data?.message ?? e?.message ?? 'Failed to create assignment';
+      return rejectWithValue(msg);
+    }
+  }
+);
 
 export const deleteAssignment = createAsyncThunk('assignments/delete', (id: string) =>
   assignmentService.deleteAssignment(id).then(() => id));

@@ -15,7 +15,8 @@ const errorHandler = (err, _req, res, _next) => {
     return;
   }
   if (err.name === 'ValidationError') {
-    sendError(res, 'Validation failed', 400, [err.message]);
+    const messages = Object.values(err.errors).map(e => e.message);
+    sendError(res, messages[0], 400, messages);
     return;
   }
   if (err.code === 11000) {

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, SafeAreaView,
-  StatusBar, TouchableOpacity,
+  StatusBar, TouchableOpacity, Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -69,9 +69,13 @@ export const TeacherDetailsScreen: React.FC = () => {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {/* Profile Card */}
         <View style={styles.profileCard}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{teacher.name.charAt(0).toUpperCase()}</Text>
-          </View>
+          {teacher.profileImage ? (
+            <Image source={{ uri: teacher.profileImage }} style={styles.avatarImage} />
+          ) : (
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{teacher.name.charAt(0).toUpperCase()}</Text>
+            </View>
+          )}
           <Text style={styles.name}>{teacher.name}</Text>
           <Text style={styles.teacherId}>{teacher.teacherId}</Text>
           <StatusBadge status={teacher.status} />
@@ -169,6 +173,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: spacing[3],
   },
+  avatarImage: { width: 72, height: 72, borderRadius: 36, marginBottom: spacing[3] },
   avatarText: {
     fontSize: typography.fontSizes['3xl'],
     fontWeight: typography.fontWeights.bold,

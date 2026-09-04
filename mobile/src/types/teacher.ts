@@ -30,6 +30,7 @@ export interface TeacherFormData {
   email: string;
   password: string;
   phone?: string;
+  profileImage?: string;
   department?: string;
   subjects?: string[];
   assignedClasses?: {

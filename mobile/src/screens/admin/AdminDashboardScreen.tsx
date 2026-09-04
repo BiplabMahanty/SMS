@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: colors.primary,
     paddingHorizontal: spacing[5],
-    paddingTop: spacing[5],
+    paddingTop: spacing[10],
     paddingBottom: spacing[8],
     flexDirection: 'row',
     alignItems: 'center',

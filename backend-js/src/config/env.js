@@ -10,6 +10,7 @@ const config = {
   port: parseInt(process.env.PORT || '5000', 10),
   mongodbUri: process.env.MONGODB_URI,
   corsOrigin: process.env.CORS_ORIGIN || '*',
+  baseUrl: process.env.BASE_URL || '',
   jwt: {
     accessSecret: process.env.JWT_ACCESS_SECRET,
     refreshSecret: process.env.JWT_REFRESH_SECRET,

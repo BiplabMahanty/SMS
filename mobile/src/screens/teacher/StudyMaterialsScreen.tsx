@@ -3,11 +3,12 @@ import { View, Text, StyleSheet, FlatList, SafeAreaView, StatusBar, TouchableOpa
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import * as DocumentPicker from 'expo-document-picker';
-import { Card, Loading, EmptyState, Button, Input, LogoutButton } from '../../components/ui';
+import { Card, Loading, EmptyState, Button, Input, Dropdown, LogoutButton } from '../../components/ui';
 import { colors, typography, spacing, radii } from '../../theme';
 import { useAppDispatch, useAppSelector } from '../../hooks/useAppStore';
 import { fetchMaterials, createMaterial, deleteMaterial } from '../../store/slices/assignmentSlice';
 import { studyMaterialService } from '../../services/assignmentService';
+import { classService } from '../../services/classService';
 
 export const StudyMaterialsScreen: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -16,11 +17,19 @@ export const StudyMaterialsScreen: React.FC = () => {
   const { user } = useAppSelector(s => s.auth);
   const canUpload = user?.role === 'TEACHER' || user?.role === 'ADMIN';
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ title: '', description: '', classId: '', academicYearId: '' });
+  const [form, setForm] = useState({ title: '', description: '' });
+  const [classId, setClassId] = useState('');
+  const [academicYearId, setAcademicYearId] = useState('');
   const [file, setFile] = useState<{ name: string; uri: string; type: string } | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [classes, setClasses] = useState<{ label: string; value: string }[]>([]);
+  const [academicYears, setAcademicYears] = useState<{ label: string; value: string }[]>([]);
 
-  useEffect(() => { dispatch(fetchMaterials()); }, [dispatch]);
+  useEffect(() => {
+    dispatch(fetchMaterials());
+    classService.getClasses().then(({ data }) => setClasses(data.data.map(c => ({ label: c.name, value: c._id }))));
+    classService.getAcademicYears().then(({ data }) => setAcademicYears(data.data.map(y => ({ label: y.name, value: y._id }))));
+  }, [dispatch]);
 
   const pickFile = async () => {
     const result = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
@@ -31,18 +40,23 @@ export const StudyMaterialsScreen: React.FC = () => {
   };
 
   const handleUpload = async () => {
-    if (!form.title || !form.classId || !form.academicYearId || !file) {
-      Alert.alert('Error', 'All fields and a file are required');
+    if (!form.title || !classId || !academicYearId || !file) {
+      Alert.alert('Error', 'Title, Class, Academic Year and a file are required');
       return;
     }
     setUploading(true);
     const fd = new FormData();
-    Object.entries(form).forEach(([k, v]) => v && fd.append(k, v));
+    fd.append('title', form.title);
+    if (form.description) fd.append('description', form.description);
+    fd.append('classId', classId);
+    fd.append('academicYearId', academicYearId);
     fd.append('file', { uri: file.uri, name: file.name, type: file.type } as any);
     try {
       await dispatch(createMaterial(fd)).unwrap();
       setShowModal(false);
-      setForm({ title: '', description: '', classId: '', academicYearId: '' });
+      setForm({ title: '', description: '' });
+      setClassId('');
+      setAcademicYearId('');
       setFile(null);
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Upload failed');
@@ -111,8 +125,9 @@ export const StudyMaterialsScreen: React.FC = () => {
           <View style={styles.modal}>
             <Text style={styles.modalTitle}>Upload Material</Text>
             <Input label="Title *" value={form.title} onChangeText={v => setForm(p => ({ ...p, title: v }))} />
-            <Input label="Class ID *" value={form.classId} onChangeText={v => setForm(p => ({ ...p, classId: v }))} />
-            <Input label="Academic Year ID *" value={form.academicYearId} onChangeText={v => setForm(p => ({ ...p, academicYearId: v }))} />
+            <Input label="Description" value={form.description} onChangeText={v => setForm(p => ({ ...p, description: v }))} />
+            <Dropdown label="Academic Year *" placeholder="Select academic year" items={academicYears} value={academicYearId} onChange={setAcademicYearId} />
+            <Dropdown label="Class *" placeholder="Select class" items={classes} value={classId} onChange={setClassId} />
             <TouchableOpacity style={styles.filePicker} onPress={pickFile}>
               <Ionicons name="attach" size={20} color={colors.primary} />
               <Text style={styles.filePickerText}>{file ? file.name : 'Select File *'}</Text>

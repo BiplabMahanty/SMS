@@ -60,7 +60,7 @@ const createStudent = async (req, res, next) => {
     if (await Student.findOne({ email })) throw new AppError('A student with this email already exists', 409);
     if (await User.findOne({ email })) throw new AppError('A user with this email already exists', 409);
 
-    const user = await User.create({ name: req.body.name.trim(), email, password: req.body.password, role: 'STUDENT' });
+    const user = await User.create({ name: req.body.name.trim(), email, password: req.body.password, role: 'STUDENT', profileImage: req.body.profileImage });
     const studentId = await generateStudentId();
     const { password: _, ...studentData } = req.body;
     const student = await Student.create({ ...studentData, studentId, user: user._id });

@@ -32,7 +32,7 @@ export const fetchClasses = createAsyncThunk(
 
 export const createClass = createAsyncThunk(
   'classes/create',
-  async (payload: { name: string; academicYear: string }, { rejectWithValue }) => {
+  async (payload: { name: string; academicYear: string; icon?: string }, { rejectWithValue }) => {
     try {
       const { data } = await classService.createClass(payload);
       return data.data;
@@ -42,7 +42,7 @@ export const createClass = createAsyncThunk(
 
 export const updateClass = createAsyncThunk(
   'classes/update',
-  async ({ id, data: payload }: { id: string; data: { name?: string; academicYear?: string } }, { rejectWithValue }) => {
+  async ({ id, data: payload }: { id: string; data: { name?: string; academicYear?: string; icon?: string } }, { rejectWithValue }) => {
     try {
       const { data } = await classService.updateClass(id, payload);
       return data.data;

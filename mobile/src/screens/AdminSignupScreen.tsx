@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 
-import { Button, Input, Card } from '../components/ui';
+import { Button, Input, Card, PhotoPicker } from '../components/ui';
 import { colors, typography, spacing } from '../theme';
 import { useAppDispatch, useAppSelector } from '../hooks/useAppStore';
 import { registerAdmin, clearError } from '../store/slices/authSlice';
@@ -39,6 +39,7 @@ export const AdminSignupScreen: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation<NavProp>();
   const { loading, error } = useAppSelector((s) => s.auth);
+  const [photo, setPhoto] = useState<string | undefined>();
 
   const { control, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -50,6 +51,7 @@ export const AdminSignupScreen: React.FC = () => {
       name: data.name.trim(),
       email: data.email.trim().toLowerCase(),
       password: data.password,
+      profileImage: photo,
     }));
   };
 
@@ -70,6 +72,8 @@ export const AdminSignupScreen: React.FC = () => {
                 <Text style={styles.errorText}>{error}</Text>
               </View>
             )}
+
+            <PhotoPicker value={photo} onChange={setPhoto} />
 
             <Controller
               control={control}

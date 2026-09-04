@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Input, Button, Card } from './ui';
+import { Input, Button, Card, PhotoPicker } from './ui';
 import { colors, typography, spacing, radii } from '../theme';
 import { TeacherFormData, Teacher } from '../types/teacher';
 
@@ -37,6 +37,7 @@ export const TeacherForm: React.FC<TeacherFormProps> = ({
 }) => {
   const [subjects, setSubjects] = useState<string[]>(defaultValues?.subjects ?? []);
   const [subjectInput, setSubjectInput] = useState('');
+  const [photo, setPhoto] = useState<string | undefined>(defaultValues?.profileImage);
 
   const { control, handleSubmit, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(teacherSchema),
@@ -64,6 +65,7 @@ export const TeacherForm: React.FC<TeacherFormProps> = ({
 
   const handleFormSubmit = (values: FormValues) => {
     onSubmit({
+      profileImage: photo || undefined,
       name: values.name,
       email: values.email,
       password: values.password,
@@ -90,6 +92,8 @@ export const TeacherForm: React.FC<TeacherFormProps> = ({
           <Text style={styles.errorText}>{error}</Text>
         </View>
       )}
+
+      <PhotoPicker value={photo} onChange={setPhoto} />
 
       <Card style={styles.section}>
         <Text style={styles.sectionTitle}>Personal Information</Text>

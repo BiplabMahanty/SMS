@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, SafeAreaView, StatusBar, TouchableOpacity,
+  View, Text, StyleSheet, ScrollView, SafeAreaView, StatusBar, TouchableOpacity, Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -34,9 +34,13 @@ export const TeacherProfileScreen: React.FC = () => {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.profileBanner}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{teacher.name.charAt(0).toUpperCase()}</Text>
-          </View>
+          {teacher.profileImage ? (
+            <Image source={{ uri: teacher.profileImage }} style={styles.avatarImage} />
+          ) : (
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{teacher.name.charAt(0).toUpperCase()}</Text>
+            </View>
+          )}
           <Text style={styles.name}>{teacher.name}</Text>
           <Text style={styles.teacherId}>{teacher.teacherId}</Text>
           <StatusBadge status={teacher.status} />
@@ -109,6 +113,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing[2],
   },
   avatar: { width: 72, height: 72, borderRadius: 36, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: spacing[3] },
+  avatarImage: { width: 72, height: 72, borderRadius: 36, marginBottom: spacing[3] },
   avatarText: { fontSize: typography.fontSizes['3xl'], fontWeight: typography.fontWeights.bold, color: colors.white },
   name: { fontSize: typography.fontSizes.xl, fontWeight: typography.fontWeights.bold, color: colors.white, marginBottom: spacing[1] },
   teacherId: { fontSize: typography.fontSizes.sm, color: 'rgba(255,255,255,0.75)', marginBottom: spacing[2] },

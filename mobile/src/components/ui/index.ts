@@ -9,3 +9,4 @@ export { StatusBadge } from './StatusBadge';
 export { LogoutButton } from './LogoutButton';
 export { Dropdown } from './Dropdown';
 export type { DropdownItem } from './Dropdown';
+export { PhotoPicker } from './PhotoPicker';

@@ -5,11 +5,11 @@ const { sendSuccess } = require('../utils/response');
 
 const register = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, profileImage } = req.body;
     const existing = await User.findOne({ email: email.trim().toLowerCase() });
     if (existing) throw new AppError('Email already in use', 409);
 
-    const user = await User.create({ name: name.trim(), email: email.trim().toLowerCase(), password, role: 'ADMIN' });
+    const user = await User.create({ name: name.trim(), email: email.trim().toLowerCase(), password, role: 'ADMIN', profileImage });
     const payload = { userId: user._id.toString(), role: user.role };
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);

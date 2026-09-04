@@ -23,7 +23,15 @@ const createAssignment = async (req, res, next) => {
     if (!teacher) throw new AppError('Teacher profile not found', 404);
     const files = req.files ?? [];
     const attachments = files.map(fileToAttachment);
-    const assignment = await Assignment.create({ ...req.body, teacher: teacher._id, attachments });
+    const { classId, sectionId, academicYearId, ...rest } = req.body;
+    const assignment = await Assignment.create({
+      ...rest,
+      class: classId,
+      ...(sectionId && { section: sectionId }),
+      academicYear: academicYearId,
+      teacher: teacher._id,
+      attachments,
+    });
     const populated = await assignment.populate(POPULATE);
     sendSuccess(res, 'Assignment created', populated, 201);
   } catch (err) { next(err); }

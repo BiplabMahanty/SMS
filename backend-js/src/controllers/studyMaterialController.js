@@ -18,8 +18,12 @@ const createMaterial = async (req, res, next) => {
   try {
     const file = req.file;
     if (!file) throw new AppError('File is required', 400);
+    const { classId, sectionId, academicYearId, ...rest } = req.body;
     const material = await StudyMaterial.create({
-      ...req.body,
+      ...rest,
+      class: classId,
+      ...(sectionId && { section: sectionId }),
+      academicYear: academicYearId,
       uploadedBy: req.user.userId,
       type: getMaterialType(file.mimetype),
       filename: file.filename,

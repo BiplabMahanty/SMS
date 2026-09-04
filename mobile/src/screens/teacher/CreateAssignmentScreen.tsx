@@ -60,19 +60,25 @@ export const CreateAssignmentScreen: React.FC = () => {
       return;
     }
     setLoading(true);
-    const fd = new FormData();
-    fd.append('title', form.title);
-    if (form.description) fd.append('description', form.description);
-    fd.append('classId', classId);
-    if (sectionId) fd.append('sectionId', sectionId);
-    fd.append('academicYearId', academicYearId);
-    fd.append('dueDate', form.dueDate);
-    files.forEach(f => fd.append('files', { uri: f.uri, name: f.name, type: f.type } as any));
     try {
-      await dispatch(createAssignment(fd)).unwrap();
+      let payload: FormData | object;
+      if (files.length > 0) {
+        const fd = new FormData();
+        fd.append('title', form.title);
+        if (form.description) fd.append('description', form.description);
+        fd.append('classId', classId);
+        if (sectionId) fd.append('sectionId', sectionId);
+        fd.append('academicYearId', academicYearId);
+        fd.append('dueDate', form.dueDate);
+        files.forEach(f => fd.append('files', { uri: f.uri, name: f.name, type: f.type } as any));
+        payload = fd;
+      } else {
+        payload = { title: form.title, description: form.description || undefined, classId, sectionId: sectionId || undefined, academicYearId, dueDate: form.dueDate };
+      }
+      await dispatch(createAssignment(payload)).unwrap();
       navigation.goBack();
     } catch (e: any) {
-      Alert.alert('Error', e.message ?? 'Failed to create assignment');
+      Alert.alert('Error', typeof e === 'string' ? e : e?.message ?? 'Failed to create assignment');
     } finally {
       setLoading(false);
     }

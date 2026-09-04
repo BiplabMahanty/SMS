@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, SafeAreaView,
-  StatusBar, TouchableOpacity,
+  StatusBar, TouchableOpacity, FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useForm, Controller } from 'react-hook-form';
@@ -15,6 +15,7 @@ import { colors, typography, spacing, radii } from '../../theme';
 import { useAppDispatch, useAppSelector } from '../../hooks/useAppStore';
 import { createClass, updateClass, fetchAcademicYears } from '../../store/slices/classSlice';
 import { AdminStackParamList } from '../../navigation/types';
+import { SUBJECT_ICONS, DEFAULT_ICON } from '../../constants/classIcons';
 
 type RouteProps = RouteProp<AdminStackParamList, 'AddEditClass'>;
 type NavProp = NativeStackNavigationProp<AdminStackParamList>;
@@ -22,6 +23,7 @@ type NavProp = NativeStackNavigationProp<AdminStackParamList>;
 const schema = z.object({
   name: z.string().min(1, 'Class name is required'),
   academicYear: z.string().min(1, 'Academic year is required'),
+  icon: z.string().default(DEFAULT_ICON),
 });
 type FormValues = z.infer<typeof schema>;
 
@@ -38,10 +40,11 @@ export const AddEditClassScreen: React.FC = () => {
 
   const { control, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { name: className ?? '', academicYear: academicYearId ?? '' },
+    defaultValues: { name: className ?? '', academicYear: academicYearId ?? '', icon: DEFAULT_ICON },
   });
 
   const selectedYear = watch('academicYear');
+  const selectedIcon = watch('icon');
 
   const onSubmit = async (values: FormValues) => {
     const action = isEdit
@@ -82,7 +85,43 @@ export const AddEditClassScreen: React.FC = () => {
             />
           )} />
 
-          <Text style={styles.label}>Academic Year *</Text>
+          {/* Icon Picker */}
+          <Text style={styles.label}>Subject Icon *</Text>
+          <View style={styles.iconPreviewRow}>
+            <View style={[styles.iconPreviewBox, { backgroundColor: SUBJECT_ICONS.find(s => s.icon === selectedIcon)?.bg ?? '#F3F4F6' }]}>
+              <Text style={styles.iconPreviewEmoji}>{selectedIcon}</Text>
+            </View>
+            <Text style={styles.iconPreviewLabel}>
+              {SUBJECT_ICONS.find(s => s.icon === selectedIcon)?.label ?? 'Select a subject icon'}
+            </Text>
+          </View>
+          <FlatList
+            data={SUBJECT_ICONS}
+            numColumns={5}
+            scrollEnabled={false}
+            keyExtractor={(item) => item.icon}
+            columnWrapperStyle={styles.iconRow}
+            renderItem={({ item }) => {
+              const isSelected = selectedIcon === item.icon;
+              return (
+                <TouchableOpacity
+                  style={[styles.iconCell, isSelected && styles.iconCellSelected, { backgroundColor: item.bg }]}
+                  onPress={() => setValue('icon', item.icon)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.iconEmoji}>{item.icon}</Text>
+                  {isSelected && (
+                    <View style={styles.iconCheck}>
+                      <Ionicons name="checkmark-circle" size={14} color={colors.primary} />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            }}
+          />
+
+          {/* Academic Year */}
+          <Text style={[styles.label, { marginTop: spacing[4] }]}>Academic Year *</Text>
           {academicYears.length === 0 ? (
             <TouchableOpacity
               style={styles.noYearsBtn}
@@ -137,6 +176,31 @@ const styles = StyleSheet.create({
   errorText: { fontSize: typography.fontSizes.sm, color: colors.error },
   card: { marginBottom: spacing[4], padding: spacing[4] },
   label: { fontSize: typography.fontSizes.sm, fontWeight: typography.fontWeights.medium, color: colors.textPrimary, marginBottom: spacing[2] },
+
+  // Icon picker
+  iconPreviewRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[3], marginBottom: spacing[3] },
+  iconPreviewBox: {
+    width: 52, height: 52, borderRadius: radii.md,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  iconPreviewEmoji: { fontSize: 28 },
+  iconPreviewLabel: { fontSize: typography.fontSizes.sm, color: colors.textSecondary, fontWeight: typography.fontWeights.medium },
+  iconRow: { gap: spacing[2], marginBottom: spacing[2] },
+  iconCell: {
+    flex: 1,
+    aspectRatio: 1,
+    borderRadius: radii.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+    position: 'relative',
+  },
+  iconCellSelected: { borderColor: colors.primary },
+  iconEmoji: { fontSize: 22 },
+  iconCheck: { position: 'absolute', top: 2, right: 2 },
+
+  // Academic year
   noYearsBtn: {
     flexDirection: 'row',
     alignItems: 'center',

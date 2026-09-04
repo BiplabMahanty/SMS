@@ -11,9 +11,9 @@ export const assignmentService = {
   getAssignment: (id: string) =>
     client.get<{ data: Assignment }>(`/assignments/${id}`).then(r => r.data.data),
 
-  createAssignment: (formData: FormData) =>
-    client.post<{ data: Assignment }>('/assignments', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+  createAssignment: (payload: FormData | object) =>
+    client.post<{ data: Assignment }>('/assignments', payload, {
+      headers: payload instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
     }).then(r => r.data.data),
 
   updateAssignment: (id: string, formData: FormData) =>

@@ -4,12 +4,13 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
-import { Input, Button, Card, Dropdown } from './ui';
+import { Input, Button, Card, Dropdown, PhotoPicker } from './ui';
 import { colors, typography, spacing } from '../theme';
 import { StudentFormData, Student } from '../types/student';
 import { classService } from '../services/classService';
 
 const studentSchema = z.object({
+  profileImage: z.string().optional(),
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Enter a valid email'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
@@ -48,6 +49,7 @@ export const StudentForm: React.FC<StudentFormProps> = ({
   const [academicYears, setAcademicYears] = useState<{ label: string; value: string }[]>([]);
   const [classes, setClasses] = useState<{ label: string; value: string }[]>([]);
   const [sections, setSections] = useState<{ label: string; value: string }[]>([]);
+  const [photo, setPhoto] = useState<string | undefined>(defaultValues?.profileImage);
   const [loadingYears, setLoadingYears] = useState(false);
   const [loadingClasses, setLoadingClasses] = useState(false);
   const [loadingSections, setLoadingSections] = useState(false);
@@ -60,6 +62,7 @@ export const StudentForm: React.FC<StudentFormProps> = ({
   } = useForm<FormValues>({
     resolver: zodResolver(studentSchema),
     defaultValues: {
+      profileImage: defaultValues?.profileImage ?? '',
       name: defaultValues?.name ?? '',
       email: defaultValues?.email ?? '',
       password: '',
@@ -113,6 +116,7 @@ export const StudentForm: React.FC<StudentFormProps> = ({
 
   const handleFormSubmit = (values: FormValues) => {
     const payload: StudentFormData = {
+      profileImage: photo || undefined,
       name: values.name,
       email: values.email,
       password: values.password,
@@ -142,6 +146,8 @@ export const StudentForm: React.FC<StudentFormProps> = ({
           <Text style={styles.errorText}>{error}</Text>
         </View>
       )}
+
+      <PhotoPicker value={photo} onChange={setPhoto} />
 
       <Card style={styles.section}>
         <Text style={styles.sectionTitle}>Personal Information</Text>

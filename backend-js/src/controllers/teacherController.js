@@ -7,7 +7,7 @@ const { AppError } = require('../middleware/errorHandler');
 const { sendSuccess } = require('../utils/response');
 
 const POPULATE_ASSIGNED = [
-  { path: 'assignedClasses.class', select: 'name' },
+  { path: 'assignedClasses.class', select: 'name icon' },
   { path: 'assignedClasses.section', select: 'name' },
   { path: 'assignedClasses.academicYear', select: 'name' },
 ];
@@ -44,7 +44,7 @@ const createTeacher = async (req, res, next) => {
     if (await Teacher.findOne({ email })) throw new AppError('A teacher with this email already exists', 409);
     if (await User.findOne({ email })) throw new AppError('A user with this email already exists', 409);
 
-    const user = await User.create({ name: req.body.name.trim(), email, password: req.body.password, role: 'TEACHER' });
+    const user = await User.create({ name: req.body.name.trim(), email, password: req.body.password, role: 'TEACHER', profileImage: req.body.profileImage });
     const teacherId = await generateTeacherId();
     const { password: _, ...teacherData } = req.body;
     const teacher = await Teacher.create({ ...teacherData, teacherId, user: user._id });

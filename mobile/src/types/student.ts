@@ -9,6 +9,7 @@ export interface AcademicYear {
 export interface ClassItem {
   _id: string;
   name: string;
+  icon?: string;
 }
 
 export interface SectionItem {
@@ -50,6 +51,7 @@ export interface StudentFormData {
   email: string;
   password: string;
   phone?: string;
+  profileImage?: string;
   dateOfBirth?: string;
   gender?: Gender;
   admissionDate?: string;

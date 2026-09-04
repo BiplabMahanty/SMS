@@ -10,10 +10,10 @@ export const classService = {
   getClasses: (params?: { academicYear?: string }) =>
     apiClient.get<ApiResponse<ClassWithYear[]>>('/classes', { params }),
 
-  createClass: (data: { name: string; academicYear: string }) =>
+  createClass: (data: { name: string; academicYear: string; icon?: string }) =>
     apiClient.post<ApiResponse<ClassWithYear>>('/classes', data),
 
-  updateClass: (id: string, data: { name?: string; academicYear?: string }) =>
+  updateClass: (id: string, data: { name?: string; academicYear?: string; icon?: string }) =>
     apiClient.put<ApiResponse<ClassWithYear>>(`/classes/${id}`, data),
 
   deleteClass: (id: string) =>
