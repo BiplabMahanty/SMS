@@ -5,12 +5,10 @@ import { TeacherDashboardScreen } from '../screens/teacher/TeacherDashboardScree
 import { MyClassesScreen } from '../screens/teacher/MyClassesScreen';
 import { MyStudentsScreen } from '../screens/teacher/MyStudentsScreen';
 import { TeacherProfileScreen } from '../screens/teacher/TeacherProfileScreen';
-import { MyTimetableScreen } from '../screens/teacher/MyTimetableScreen';
 import { MarkAttendanceScreen } from '../screens/teacher/MarkAttendanceScreen';
 import { AttendanceHistoryScreen } from '../screens/teacher/AttendanceHistoryScreen';
-import { AssignmentsListScreen } from '../screens/teacher/AssignmentsListScreen';
-import { CreateAssignmentScreen } from '../screens/teacher/CreateAssignmentScreen';
 import { AssignmentDetailScreen } from '../screens/teacher/AssignmentDetailScreen';
+import { CreateAssignmentScreen } from '../screens/teacher/CreateAssignmentScreen';
 import { AssignmentSubmissionsScreen } from '../screens/teacher/AssignmentSubmissionsScreen';
 import { StudyMaterialsScreen } from '../screens/teacher/StudyMaterialsScreen';
 
@@ -22,12 +20,10 @@ export const TeacherNavigator: React.FC = () => (
     <Stack.Screen name="MyClasses" component={MyClassesScreen} />
     <Stack.Screen name="MyStudents" component={MyStudentsScreen} />
     <Stack.Screen name="TeacherProfile" component={TeacherProfileScreen} />
-    <Stack.Screen name="MyTimetable" component={MyTimetableScreen} />
     <Stack.Screen name="MarkAttendance" component={MarkAttendanceScreen} />
     <Stack.Screen name="AttendanceHistory" component={AttendanceHistoryScreen} />
-    <Stack.Screen name="AssignmentsList" component={AssignmentsListScreen} />
-    <Stack.Screen name="CreateAssignment" component={CreateAssignmentScreen} />
     <Stack.Screen name="AssignmentDetail" component={AssignmentDetailScreen} />
+    <Stack.Screen name="CreateAssignment" component={CreateAssignmentScreen} />
     <Stack.Screen name="AssignmentSubmissions" component={AssignmentSubmissionsScreen} />
     <Stack.Screen name="StudyMaterialsList" component={StudyMaterialsScreen} />
   </Stack.Navigator>

@@ -17,6 +17,10 @@ import { TeacherStackParamList } from '../../navigation/types';
 import { getIconBg, DEFAULT_ICON } from '../../constants/classIcons';
 import { timetableService } from '../../services/timetableService';
 import { TimetableEntry, DayOfWeek } from '../../types/timetable';
+// unused after tab extraction — kept for DAY_MAP type only
+import { MyClassesTab } from './tabs/MyClassesTab';
+import { ScheduleTab } from './tabs/ScheduleTab';
+import { AssignmentsTab } from './tabs/AssignmentsTab';
 
 type NavProp = NativeStackNavigationProp<TeacherStackParamList>;
 type TabName = 'Dashboard' | 'Schedule' | 'Classes' | 'Assignments' | 'Profile';
@@ -87,10 +91,7 @@ export const TeacherDashboardScreen: React.FC = () => {
 
   const handleTabPress = (tab: TabName) => {
     setActiveTab(tab);
-    if (tab === 'Classes') navigation.navigate('MyClasses');
-    else if (tab === 'Assignments') navigation.navigate('AssignmentsList');
-    else if (tab === 'Profile') navigation.navigate('TeacherProfile');
-    else if (tab === 'Schedule') navigation.navigate('MyTimetable');
+    if (tab === 'Profile') navigation.navigate('TeacherProfile');
   };
 
   const tabs: { name: TabName; icon: keyof typeof Ionicons.glyphMap; activeIcon: keyof typeof Ionicons.glyphMap }[] = [
@@ -320,8 +321,7 @@ export const TeacherDashboardScreen: React.FC = () => {
         contentContainerStyle={styles.scroll}
         nestedScrollEnabled
       >
-        {ListHeader}
-        {ListFooter}
+        {activeTab === 'Classes' ? <MyClassesTab /> : activeTab === 'Schedule' ? <ScheduleTab /> : activeTab === 'Assignments' ? <AssignmentsTab /> : <>{ListHeader}{ListFooter}</>}
       </ScrollView>
 
       <View style={styles.tabBar}>
@@ -437,7 +437,6 @@ const styles = StyleSheet.create({
   classFooter: { flexDirection: 'row', alignItems: 'center' },
   classFooterText: { fontSize: typography.fontSizes.xs, color: colors.textSecondary, marginLeft: 3 },
   emptyText: { fontSize: typography.fontSizes.sm, color: colors.textSecondary, marginLeft: spacing[2] },
-
   // Timeline
   timelineCard: {
     backgroundColor: '#f3f5f6',

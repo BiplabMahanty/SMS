@@ -34,10 +34,8 @@ export type TeacherStackParamList = {
   MyClasses: undefined;
   MyStudents: undefined;
   TeacherProfile: undefined;
-  MyTimetable: undefined;
   MarkAttendance: { classId: string; sectionId?: string; academicYearId: string; className: string; date: string };
   AttendanceHistory: { classId: string; sectionId?: string; academicYearId: string; className: string };
-  AssignmentsList: undefined;
   AssignmentDetail: { assignmentId: string };
   CreateAssignment: undefined;
   AssignmentSubmissions: { assignmentId: string; title: string };
